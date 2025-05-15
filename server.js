@@ -15,6 +15,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.listen(process.env.PORT, () => {
   console.log(`Server running on port ${process.env.PORT}`);
 });
+//home test
 app.get('/home',(req, res) => {
   res.json({ message: 'Successfully accessed' });
 })
