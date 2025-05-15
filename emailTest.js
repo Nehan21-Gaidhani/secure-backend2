@@ -12,7 +12,7 @@ const transporter = nodemailer.createTransport({
 transporter.sendMail({
   to: process.env.EMAIL_USER,
   subject: "Test Email",
-  html: "<h1>Hello from Nodemailer!</h1>"
+  html: "<h1>Hello from Nodemailer!!</h1>"
 }, (err, info) => {
   if (err) return console.log(err);
   console.log("Email sent:", info.response);
