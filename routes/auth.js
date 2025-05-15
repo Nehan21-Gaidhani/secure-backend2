@@ -123,6 +123,9 @@ router.post('/login', async (req, res) => {
   }
 });
 
-
+// ✅ GET /protected
+router.get('/protected', require('../middleware/auth'), (req, res) => {
+  res.json({ message: 'Access granted to protected route' });
+});
 
 module.exports = router;
