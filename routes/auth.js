@@ -69,8 +69,7 @@ router.post('/register', async (req, res) => {
 });
 
 // ✅ GET /verify-registration 
-router.get('/verify-registration', async (req, res) => {
-  const { token } = req.query;
+
 
   try {
     const { email } = jwt.verify(token, process.env.JWT_SECRET);
