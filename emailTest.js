@@ -9,6 +9,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+//email content
 transporter.sendMail({
   to: process.env.EMAIL_USER,
   subject: "Test Email",
