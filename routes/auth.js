@@ -103,7 +103,7 @@ router.post('/login', async (req, res) => {
     }
 
     if (!user.passwordHash) {
-      // Set password for first-time verified users
+      // Set password for first-time (verified )users
       const hash = await bcrypt.hash(password, 10);
       user.passwordHash = hash;
       await user.save();
