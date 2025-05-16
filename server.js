@@ -17,5 +17,5 @@ app.listen(process.env.PORT, () => {
 });
 //home test
 app.get('/home',(req, res) => {
-  res.json({ message: 'Successfully accessed' });
+  res.json({ message: 'Successfully accessed , test done' });
 })
