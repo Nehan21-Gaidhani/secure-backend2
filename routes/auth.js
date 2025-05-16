@@ -17,7 +17,7 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-// ✅ POST /register
+// POST /register
 router.post('/register', async (req, res) => {
   const { email, password } = req.body;
 
