@@ -83,7 +83,7 @@ router.get('/verify-registration', async (req, res) => {
     ///saved user
     await user.save();
 
-    res.send('Email verified! You can now login.');
+    res.send('Email verified! YYou can now login .');
 
   } catch (err) {
     console.error(err);
