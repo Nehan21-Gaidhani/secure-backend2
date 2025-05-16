@@ -68,7 +68,7 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// ✅ GET /verify-registration 
+//  GET /verify-registration 
 router.get('/verify-registration', async (req, res) => {
   const { token } = req.query;
 
