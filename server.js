@@ -8,7 +8,7 @@ app.use(express.json());
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB connected"));
 app.get('/', (req, res) => {
-  res.send('Secure Backend API is running 🚀');
+  res.send('Secure Backend API is running successfuly🚀');
 });
 app.use('/api/auth', require('./routes/auth'));
 
