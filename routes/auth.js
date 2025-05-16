@@ -80,6 +80,7 @@ router.get('/verify-registration', async (req, res) => {
 
     user.verified = true;
     user.verificationToken = null;
+    ///saved user
     await user.save();
 
     res.send('Email verified! You can now login.');
