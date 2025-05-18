@@ -151,6 +151,25 @@ router.post('/request-password-reset', async (req, res) => {
   res.json({ message: 'Password reset email sent' });
 });
 
+// Reset password
+router.post('/reset-password', async (req, res) => {
+  const { token } = req.query;
+  const { newPassword } = req.body;
 
+  try {
+    const { id } = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(id);
+    if (!user || user.resetToken !== token) return res.status(400).json({ message: 'Invalid token' });
+
+    const hash = await bcrypt.hash(newPassword, 10);
+    user.passwordHash = hash;
+    user.resetToken = null;
+    await user.save();
+
+    res.json({ message: 'Password reset successful' });
+  } catch (err) {
+    res.status(400).json({ message: 'Token expired or invalid' });
+  }
+});
 
 module.exports = router;
