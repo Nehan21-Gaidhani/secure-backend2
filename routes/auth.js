@@ -129,4 +129,28 @@ router.get('/protected', require('../middleware/auth'), (req, res) => {
   res.json({ message: 'Access granted to protected route' });
 });
 
+const crypto = require("crypto");
+
+// Request password reset
+router.post('/request-password-reset', async (req, res) => {
+  const { email } = req.body;
+  const user = await User.findOne({ email });
+  if (!user || !user.verified) return res.status(400).json({ message: "User not found or not verified" });
+
+  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '15m' });
+  user.resetToken = token;
+  await user.save();
+
+  const resetLink = `http://localhost:5000/api/auth/reset-password?token=${token}`;
+  await transporter.sendMail({
+    to: email,
+    subject: 'Reset your password',
+    html: `<a href="${resetLink}">Click here to reset your password</a>`
+  });
+
+  res.json({ message: 'Password reset email sent' });
+});
+
+
+
 module.exports = router;
