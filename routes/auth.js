@@ -5,9 +5,8 @@ const nodemailer = require('nodemailer');
 const User = require('../models/User');
 
 const router = express.Router();
-router.get('/home',(req, res) => {
-  res.json({ message: 'Successfully accessed' });
-})
+// app.use(express.urlencoded({ extended: true }));
+
 // Email transporter setup
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -17,6 +16,11 @@ const transporter = nodemailer.createTransport({
   }
 });
 
+// GET /home
+router.get('/home', (req, res) => {
+  res.json({ message: 'Successfully accessed2' });
+});
+router.get('/home2',(req,res)=>{res.json({message:'hello'});})
 // POST /register
 router.post('/register', async (req, res) => {
   const { email, password } = req.body;
@@ -25,7 +29,6 @@ router.post('/register', async (req, res) => {
     const existing = await User.findOne({ email });
 
     if (existing && !existing.verified) {
-      // Re-send verification email
       const token = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: '10m' });
       existing.verificationToken = token;
       await existing.save();
@@ -68,7 +71,7 @@ router.post('/register', async (req, res) => {
   }
 });
 
-//  GET /verify-registration 
+// GET /verify-registration
 router.get('/verify-registration', async (req, res) => {
   const { token } = req.query;
 
@@ -80,10 +83,9 @@ router.get('/verify-registration', async (req, res) => {
 
     user.verified = true;
     user.verificationToken = null;
-    ///saved user
     await user.save();
 
-    res.send('Email verified! YYou can now login .');
+    res.send('Email verified! You can now login.');
 
   } catch (err) {
     console.error(err);
@@ -103,7 +105,6 @@ router.post('/login', async (req, res) => {
     }
 
     if (!user.passwordHash) {
-      // Set password for first-time verified users
       const hash = await bcrypt.hash(password, 10);
       user.passwordHash = hash;
       await user.save();
@@ -115,12 +116,10 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Incorrect password' });
     }
 
-    // 🔐 Prevent multiple logins
     if (user.activeToken) {
       return res.status(403).json({ message: "User already logged in." });
     }
 
-    // ✅ Generate JWT and mark user as logged in
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
     user.activeToken = token;
     await user.save();
@@ -133,6 +132,7 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// POST /logout
 router.post('/logout', require('../middleware/auth'), async (req, res) => {
   const user = await User.findById(req.user.id);
   user.activeToken = null;
@@ -140,14 +140,12 @@ router.post('/logout', require('../middleware/auth'), async (req, res) => {
   res.json({ message: "Logged out" });
 });
 
-//  GET /protected
+// GET /protected
 router.get('/protected', require('../middleware/auth'), (req, res) => {
   res.json({ message: 'Access granted to protected route' });
 });
 
-const crypto = require("crypto");
-
-// Request password reset
+// POST /request-password-reset
 router.post('/request-password-reset', async (req, res) => {
   const { email } = req.body;
   const user = await User.findOne({ email });
@@ -157,7 +155,8 @@ router.post('/request-password-reset', async (req, res) => {
   user.resetToken = token;
   await user.save();
 
-  const resetLink = `http://localhost:5000/api/auth/reset-password?token=${token}`;
+const resetLink = `http://localhost:5000/api/auth/reset-password?token=${token}`;
+
   await transporter.sendMail({
     to: email,
     subject: 'Reset your password',
@@ -167,7 +166,22 @@ router.post('/request-password-reset', async (req, res) => {
   res.json({ message: 'Password reset email sent' });
 });
 
-// Reset password
+// GET /reset-password (Serves HTML Form)
+router.get('/reset-password', (req, res) => {
+  console.log("Reset password form requested with token:", req.query.token);
+  const { token } = req.query;
+  
+  res.send(`
+    <form action="/api/auth/reset-password?token=${token}" method="POST">
+      <input type="password" name="newPassword" placeholder="New Password" required />
+      <button type="submit">Reset Password</button>
+    </form>
+  `);
+});
+
+
+
+//POST /reset-password (Handles form submission)
 router.post('/reset-password', async (req, res) => {
   const { token } = req.query;
   const { newPassword } = req.body;
@@ -182,9 +196,9 @@ router.post('/reset-password', async (req, res) => {
     user.resetToken = null;
     await user.save();
 
-    res.json({ message: 'Password reset successful' });
+    res.send('Password reset successful! You can now login.');
   } catch (err) {
-    res.status(400).json({ message: 'Token expired or invalid' });
+    res.status(400).send('Token expired or invalid');
   }
 });
 
