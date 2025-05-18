@@ -5,12 +5,16 @@ require('dotenv').config();
 const app = express();
 app.use(express.json());
 
+ app.use(express.urlencoded({ extended: true }));
+
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB connected"));
 app.get('/', (req, res) => {
   res.send('Secure Backend API is running successfuly🚀');
 });
+
 app.use('/api/auth', require('./routes/auth'));
+// In app.js
 
 app.listen(process.env.PORT, () => {
   console.log(`Server running on port ${process.env.PORT}`);
