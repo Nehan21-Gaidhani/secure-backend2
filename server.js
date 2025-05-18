@@ -19,3 +19,14 @@ app.listen(process.env.PORT, () => {
 app.get('/home',(req, res) => {
   res.json({ message: 'Successfully accessed , test done' });
 })
+
+const rateLimit = require("express-rate-limit");
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10,
+  message: 'Too many requests from this IP. Try again later.'
+});
+
+app.use('/api/auth/login', limiter);
+app.use('/api/auth/register', limiter);
