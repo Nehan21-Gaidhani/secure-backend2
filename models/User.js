@@ -7,6 +7,7 @@ const userSchema = new mongoose.Schema({
   verified: { type: Boolean, default: false },
   verificationToken: { type: String },
   resetToken: { type: String, default: null },
+  activeToken: { type: String, default: null },
 
 });
 
