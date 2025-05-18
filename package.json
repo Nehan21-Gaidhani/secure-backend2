@@ -3,10 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "node server.js",
-    "test": "mocha",
-
-    "cli:test": "node cli/test-rate-limit.js --type login --count 20"
+    "start": "node server.js"
+   
   },
   "keywords": [],
   "author": "",
