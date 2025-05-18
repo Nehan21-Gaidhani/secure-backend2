@@ -103,7 +103,7 @@ router.post('/login', async (req, res) => {
     }
 
     if (!user.passwordHash) {
-      // Set password for first-time (verified )users
+      // Set password for first-time verified users
       const hash = await bcrypt.hash(password, 10);
       user.passwordHash = hash;
       await user.save();
@@ -114,8 +114,17 @@ router.post('/login', async (req, res) => {
     if (!match) {
       return res.status(401).json({ message: 'Incorrect password' });
     }
-//jwt toke
+
+    // 🔐 Prevent multiple logins
+    if (user.activeToken) {
+      return res.status(403).json({ message: "User already logged in." });
+    }
+
+    // ✅ Generate JWT and mark user as logged in
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    user.activeToken = token;
+    await user.save();
+
     res.json({ token });
 
   } catch (err) {
@@ -123,6 +132,7 @@ router.post('/login', async (req, res) => {
     res.status(500).json({ message: 'Server error during login' });
   }
 });
+
 router.post('/logout', require('../middleware/auth'), async (req, res) => {
   const user = await User.findById(req.user.id);
   user.activeToken = null;
