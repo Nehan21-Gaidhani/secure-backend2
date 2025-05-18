@@ -6,6 +6,9 @@ const userSchema = new mongoose.Schema({
   passwordHash: { type: String },
   verified: { type: Boolean, default: false },
   verificationToken: { type: String },
+  resetToken: { type: String, default: null },
+
 });
+
 
 module.exports = mongoose.model('User', userSchema);
