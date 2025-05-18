@@ -60,7 +60,7 @@ router.post('/register', async (req, res) => {
       html: `<a href="${url}">Click here to verify your email</a>`
     });
 
-    res.status(200).json({ message: 'Verification email sent'successfully });
+    res.status(200).json({ message: 'Verification email sent successfully' });
 
   } catch (err) {
     console.error(err);
