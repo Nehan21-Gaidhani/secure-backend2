@@ -8,6 +8,10 @@ const userSchema = new mongoose.Schema({
   verificationToken: { type: String },
   resetToken: { type: String, default: null },
   activeToken: { type: String, default: null },
+  isLoggedIn: {
+  type: Boolean,
+  default: false
+}
 
 });
 
