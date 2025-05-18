@@ -123,6 +123,12 @@ router.post('/login', async (req, res) => {
     res.status(500).json({ message: 'Server error during login' });
   }
 });
+router.post('/logout', require('../middleware/auth'), async (req, res) => {
+  const user = await User.findById(req.user.id);
+  user.activeToken = null;
+  await user.save();
+  res.json({ message: "Logged out" });
+});
 
 //  GET /protected
 router.get('/protected', require('../middleware/auth'), (req, res) => {
