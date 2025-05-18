@@ -3,25 +3,25 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const User = require('../models/User');
+const authMiddleware = require('../middleware/auth');
 
 const router = express.Router();
-// app.use(express.urlencoded({ extended: true }));
 
-// Email transporter setup
+// Email transporter setup (use App Passwords if 2FA enabled)
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
-  }
+  },
 });
 
-// GET /home
+// GET /home (test route)
 router.get('/home', (req, res) => {
-  res.json({ message: 'Successfully accessed2' });
+  res.json({ message: 'Successfully accessed home route' });
 });
-router.get('/home2',(req,res)=>{res.json({message:'hello'});})
-// POST /register
+
+// ✅ Register
 router.post('/register', async (req, res) => {
   const { email, password } = req.body;
 
@@ -33,19 +33,17 @@ router.post('/register', async (req, res) => {
       existing.verificationToken = token;
       await existing.save();
 
-      const url = `http://localhost:5000/api/auth/verify-registration?token=${token}`;
+      const url = `${process.env.BASE_URL}/api/auth/verify-registration?token=${token}`;
       await transporter.sendMail({
         to: email,
         subject: 'Verify your email again',
-        html: `<a href="${url}">Click here to verify your email</a>`
+        html: `<a href="${url}">Click to verify your email</a>`,
       });
 
       return res.status(200).json({ message: 'Verification email re-sent' });
     }
 
-    if (existing) {
-      return res.status(400).json({ message: 'Already registered and verified' });
-    }
+    if (existing) return res.status(400).json({ message: 'Already registered and verified' });
 
     const token = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: '10m' });
 
@@ -53,25 +51,23 @@ router.post('/register', async (req, res) => {
       email,
       verificationToken: token,
     });
-
     await newUser.save();
 
-    const url = `http://localhost:5000/api/auth/verify-registration?token=${token}`;
+    const url = `${process.env.BASE_URL}/api/auth/verify-registration?token=${token}`;
     await transporter.sendMail({
       to: email,
       subject: 'Verify your email',
-      html: `<a href="${url}">Click here to verify your email</a>`
+      html: `<a href="${url}">Click to verify your email</a>`,
     });
 
-    res.status(200).json({ message: 'Verification email sent successfully' });
-
+    res.status(200).json({ message: 'Verification email sent' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error during registration' });
   }
 });
 
-// GET /verify-registration
+// ✅ Verify Email
 router.get('/verify-registration', async (req, res) => {
   const { token } = req.query;
 
@@ -86,24 +82,22 @@ router.get('/verify-registration', async (req, res) => {
     await user.save();
 
     res.send('Email verified! You can now login.');
-
   } catch (err) {
-    console.error(err);
     res.status(400).send('Invalid or expired verification token');
   }
 });
 
-// POST /login
+// ✅ Login
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
   try {
     const user = await User.findOne({ email });
 
-    if (!user || !user.verified) {
-      return res.status(400).json({ message: 'Not verified or user not found' });
-    }
+    if (!user || !user.verified)
+      return res.status(400).json({ message: 'User not verified or not found' });
 
+    // First-time password set
     if (!user.passwordHash) {
       const hash = await bcrypt.hash(password, 10);
       user.passwordHash = hash;
@@ -111,66 +105,64 @@ router.post('/login', async (req, res) => {
       return res.json({ message: 'Password set successfully. Please login again.' });
     }
 
-    const match = await bcrypt.compare(password, user.passwordHash);
-    if (!match) {
-      return res.status(401).json({ message: 'Incorrect password' });
-    }
+    const isMatch = await bcrypt.compare(password, user.passwordHash);
+    if (!isMatch) return res.status(401).json({ message: 'Incorrect password' });
 
-    if (user.activeToken) {
-      return res.status(403).json({ message: "User already logged in." });
-    }
+    if (user.activeToken)
+      return res.status(403).json({ message: 'User already logged in.' });
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
     user.activeToken = token;
     await user.save();
 
     res.json({ token });
-
   } catch (err) {
-    console.error(err);
     res.status(500).json({ message: 'Server error during login' });
   }
 });
 
-// POST /logout
-router.post('/logout', require('../middleware/auth'), async (req, res) => {
+// ✅ Logout
+router.post('/logout', authMiddleware, async (req, res) => {
   const user = await User.findById(req.user.id);
-  user.activeToken = null;
-  await user.save();
-  res.json({ message: "Logged out" });
+  if (user) {
+    user.activeToken = null;
+    await user.save();
+  }
+  res.json({ message: 'Logged out successfully' });
 });
 
-// GET /protected
-router.get('/protected', require('../middleware/auth'), (req, res) => {
+// ✅ Protected route
+router.get('/protected', authMiddleware, (req, res) => {
   res.json({ message: 'Access granted to protected route' });
 });
 
-// POST /request-password-reset
+// ✅ Request password reset
 router.post('/request-password-reset', async (req, res) => {
   const { email } = req.body;
   const user = await User.findOne({ email });
-  if (!user || !user.verified) return res.status(400).json({ message: "User not found or not verified" });
+
+  if (!user || !user.verified)
+    return res.status(400).json({ message: 'User not found or not verified' });
 
   const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '15m' });
   user.resetToken = token;
   await user.save();
 
-const resetLink = `http://localhost:5000/api/auth/reset-password?token=${token}`;
+  const resetLink = `${process.env.BASE_URL}/api/auth/reset-password?token=${token}`;
 
   await transporter.sendMail({
     to: email,
     subject: 'Reset your password',
-    html: `<a href="${resetLink}">Click here to reset your password</a>`
+    html: `<a href="${resetLink}">Click here to reset your password</a>`,
   });
 
   res.json({ message: 'Password reset email sent' });
 });
 
-// GET /reset-password (Serves HTML Form)
+// ✅ Show password reset form
 router.get('/reset-password', (req, res) => {
-  console.log("Reset password form requested with token:", req.query.token);
   const { token } = req.query;
-  
+
   res.send(`
     <form action="/api/auth/reset-password?token=${token}" method="POST">
       <input type="password" name="newPassword" placeholder="New Password" required />
@@ -179,9 +171,7 @@ router.get('/reset-password', (req, res) => {
   `);
 });
 
-
-
-//POST /reset-password (Handles form submission)
+// ✅ Handle password reset form
 router.post('/reset-password', async (req, res) => {
   const { token } = req.query;
   const { newPassword } = req.body;
@@ -189,7 +179,8 @@ router.post('/reset-password', async (req, res) => {
   try {
     const { id } = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(id);
-    if (!user || user.resetToken !== token) return res.status(400).json({ message: 'Invalid token' });
+    if (!user || user.resetToken !== token)
+      return res.status(400).json({ message: 'Invalid token' });
 
     const hash = await bcrypt.hash(newPassword, 10);
     user.passwordHash = hash;
