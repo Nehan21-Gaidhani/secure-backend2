@@ -1,7 +1,7 @@
 const axios = require('axios');
 
 const email = "nehanshugaidhani@gmail.com";
-const password = "soxlfdunljikooug";
+const password = process.env.EMAIL_PASS; 
 const TOTAL_ATTEMPTS = 10;
 
 (async () => {
