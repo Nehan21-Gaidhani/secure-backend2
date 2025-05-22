@@ -1,7 +1,8 @@
 const axios = require('axios');
 
-const email = "nehanshugaidhani@gmail.com";
-const password = process.env.EMAIL_PASS; 
+const email ="nehangaidhani39@gmail.com";
+const password = "jvkth";
+console.log(email, password); 
 const TOTAL_ATTEMPTS = 10;
 
 (async () => {
@@ -13,7 +14,10 @@ const TOTAL_ATTEMPTS = 10;
       });
       console.log(`[${i + 1}] ✅ Success:`, res.data);
     } catch (err) {
-      console.log(`[${i + 1}] ❌ Error:`, err.response?.data || err.message);
+      console.log(`[${i + 1}] ❌ Error:`, err.response?.data || err.message  );
+      
     }
+    
   }
+  console.log("multiple login limit reached");
 })();

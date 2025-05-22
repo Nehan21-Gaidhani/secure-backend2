@@ -68,24 +68,32 @@ router.post('/register', async (req, res) => {
 });
 
 // ✅ Verify Email
+
 router.get('/verify-registration', async (req, res) => {
   const { token } = req.query;
 
   try {
-    const { email } = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findOne({ email });
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findOne({
+      email: decoded.email,
+      verificationToken: token,
+    });
 
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user) {
+      return res.status(400).send('Invalid or expired verification link');
+    }
 
     user.verified = true;
     user.verificationToken = null;
     await user.save();
 
-    res.send('Email verified! You can now login.');
+    res.send('✅ Email verified! You can now log in.');
   } catch (err) {
-    res.status(400).send('Invalid or expired verification token');
+    console.error(err);
+    res.status(400).send('❌ Invalid or expired verification token');
   }
 });
+
 
 // ✅ Login
 router.post('/login', async (req, res) => {
